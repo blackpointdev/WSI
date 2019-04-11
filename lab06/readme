@@ -1,1 +1,1 @@
-Zdowngradować numpy do 1.15.4
+If you'll get error saying something about c arrays, you have to downgrade numpy to 1.15.4 (conda install numpy=1.15.4)
