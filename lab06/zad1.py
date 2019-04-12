@@ -37,8 +37,8 @@ print("{:<50}".format("- podejrzany miał motyw i nie miał alibi:"), p_alibi_mo
 
 # prawdopodobieństwo popełnienia zbrodni pod warunkiem że znaleziono odciski palców, podejrzany był widziany
 # w okolicy miejsca zamierszkania handlarza bronią, ale otrzymany rysopis zabójcy nie pasuje do podejrzanego
-p_odciski_widziany_rysopis = (trace['zabil'] * trace['widziany'] * trace['rysopis']).sum() / (trace['widziany']
-                                                                                              * trace['rysopis']).sum()
+p_odciski_widziany_rysopis = (trace['zabil'] * trace['odciski'] * trace['widziany'] * trace['rysopis']).sum() / \
+                             (trace['odciski'] * trace['widziany'] * trace['rysopis']).sum()
 print("{:<50}".format("- znaleziono odciski palców podejrzanego,\n  podejrzany był widziany w okolicy miejsca\n"
       "  zamierszkania handlarza bronią, ale otrzymany"))
 print("{:<50}".format("  rysopis zabójcy nie pasuje do podejrzanego"), p_odciski_widziany_rysopis)
