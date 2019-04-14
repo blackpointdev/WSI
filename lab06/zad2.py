@@ -35,7 +35,9 @@ with model:
     p_earthquake_alarm = (trace['earthquake'] * trace['alarm']).sum() / trace['alarm'].sum()
     print("3. Prawdopodobieństwo trzęsienia ziemi jeśli włączył się alarm:", p_earthquake_alarm)
 
-    # 4. Probability of someone calling during burglary TODO This solution is incorrect
-    p_burglary_call = (p_burglary_alarm * (trace['john'] * trace['mary']).sum()) / (trace['john'] * trace['mary']).sum()
-    print("4. Prawdopodobieństwo że ktoś zadzwoni w czasie włamania:", p_burglary_call)
+    # 4. Probability of someone calling during burglary
+    MandJCall = (trace['burglary'] * trace['john'] * trace['mary']).sum() / trace['burglary'].sum()
+    MCalls = (trace['burglary'] * trace['mary']).sum() / trace['burglary'].sum()
+    JCalls = (trace['burglary'] * trace["john"]).sum() / trace['burglary'].sum()
+    print("4. Prawdopodobieństwo że ktoś zadzwoni w czasie włamania:", JCalls + MCalls - MandJCall)
 
