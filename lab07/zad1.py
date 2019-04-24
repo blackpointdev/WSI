@@ -5,8 +5,7 @@ from fuzzython.ruleblock import RuleBlock
 import numpy as np
 import matplotlib.pyplot as plt
 from fuzzython.systems.mamdani import MamdaniSystem
-
-from fuzzython.norms import norms
+from mpl_toolkits.mplot3d import Axes3D
 
 
 # pomocnicza funkcja do rysowania zbiorów rozmytych
@@ -51,7 +50,7 @@ a_a_big = Adjective("a_big", a_big)
 
 accident = Variable("accident", "%", a_a_very_low, a_a_low, a_a_medium, a_a_big, defuzzification='COG', default=0)
 
-# wykresy poglądowe
+# wykresy
 x = np.linspace(10,200,1000)
 x2 = np.linspace(0.05, 4, 1000)
 x3 = np.linspace(0, 1, 1000)
@@ -85,16 +84,13 @@ block = RuleBlock('rb_mamdani', operators=('MIN','MAX','ZADEH'), activation='MIN
 block.add_rules(rule1, rule2, rule3, rule4, rule5, rule6, scope=scope)
 
 mamdani = MamdaniSystem('mamdani_model', block)
-# dane wejściowe
+
 input = {'speed': 199, 'visibility': 0.1}
-# obliczenie odpowiedzi
+
 result = mamdani.compute(input)
-#zwraca słownik
+
 print("Speed:", input['speed'], "Visibility:", input['visibility'])
 print(result)
-
-from mpl_toolkits.mplot3d import Axes3D  # Required for 3D plotting
-
 
 # przygotowanie siatki
 sampled1 = np.linspace(10, 200, 20)
