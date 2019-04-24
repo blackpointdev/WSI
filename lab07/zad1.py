@@ -50,6 +50,7 @@ a_a_medium = Adjective("a_medium", a_medium)
 a_a_big = Adjective("a_big", a_big)
 
 accident = Variable("accident", "%", a_a_very_low, a_a_low, a_a_medium, a_a_big, defuzzification='COG', default=0)
+
 # wykresy poglądowe
 x = np.linspace(10,200,1000)
 x2 = np.linspace(0.05, 4, 1000)
@@ -71,18 +72,52 @@ plt.show()
 
 scope = locals()
 
-rule1 = 'if speed is a_s_slow or visibility is a_v_good then accident is a_a_very_low'
-rule2 = 'if speed is a_s_very_fast or visibility is a_v_poor then accident is a_a_big'
+rule1 = 'if speed is a_s_slow and visibility is a_v_good or visibility is a_v_medium then accident is a_a_very_low'
+rule2 = 'if speed is a_s_slow and visibility is a_v_poor then accident is a_a_low'
+rule3 = 'if visibility is a_v_poor and speed is not a_s_slow then accident is a_a_big'
+rule4 = 'if speed is a_s_medium and visibility is a_v_good then accident is a_a_very_low'
+rule5 = 'if speed is a_s_medium and visibility is a_v_medium then accident is a_a_low'
+rule6 = 'if speed is a_s_fast visibility is a_v_good then accident is a_a_medium'
+rule7 = 'if speed is a_s_very_fast and visibility is a_v_poor then accident is a_a_big'
+
 
 block = RuleBlock('rb_mamdani', operators=('MIN','MAX','ZADEH'), activation='MIN', accumulation='MAX')
-block.add_rules(rule1, rule2, scope=scope)
+block.add_rules(rule1, rule2, rule3, rule4, rule5, rule6, scope=scope)
 
 mamdani = MamdaniSystem('mamdani_model', block)
 # dane wejściowe
-inputs = {'speed': 199, 'visibility': 0.1} #tak naprawdę to można podać liczby rzeczywiste od 0 do 10
+input = {'speed': 199, 'visibility': 0.1}
 # obliczenie odpowiedzi
-res = mamdani.compute(inputs)
+result = mamdani.compute(input)
 #zwraca słownik
-print(res)
+print("Speed:", input['speed'], "Visibility:", input['visibility'])
+print(result)
+
+from mpl_toolkits.mplot3d import Axes3D  # Required for 3D plotting
+
+
+# przygotowanie siatki
+sampled1 = np.linspace(10, 200, 20)
+sampled2 = np.linspace(0.05, 4, 20)
+sampled3 = np.linspace(0, 1, 20)
+x, y = np.meshgrid(sampled1, sampled2)
+z = np.zeros((len(sampled3),len(sampled3)))
+
+for i in range(len(sampled1)):
+    for j in range(len(sampled2)):
+        inputs = {'speed': x[i, j], 'visibility': y[i, j]}
+        res = mamdani.compute(inputs)
+        z[i, j] = res['rb_mamdani']['accident']
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+surf = ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap='viridis', linewidth=0.4, antialiased=True)
+cset = ax.contourf(x, y, z, zdir='z', offset=-1, cmap='viridis', alpha=0.5)
+cset = ax.contourf(x, y, z, zdir='x', offset=11, cmap='viridis', alpha=0.5)
+cset = ax.contourf(x, y, z, zdir='y', offset=11, cmap='viridis', alpha=0.5)
+ax.set_xlabel('speed')
+ax.set_ylabel('visibility')
+ax.set_zlabel('accident')
+ax.view_init(30, 200)
 
 
