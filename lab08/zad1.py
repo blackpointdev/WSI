@@ -13,8 +13,29 @@ def nbits(a, b, dx):
 
 
 def gen_population(P, N, B):
+    population = np.ndarray(shape=(N, P * B), dtype="int")
+    for i in range(P):
+        for j in range(B * N):
+            population[i][j] = np.random.randint(0, 2)
 
-    return pop
+    return population
 
-print(nbits(-3, 5, 0.01))
+
+def decode_individual(individual, N, B, a, dx):
+    decoded = np.ndarray(shape=(N,))
+
+    for i in range(N):
+        decimal = 0
+        for j in range(B):
+            decimal += individual[i * B + j] * 2**(B - j - 1)
+        decoded[i] = a + (decimal * dx)
+    return decoded
+
+
+def evaluate_population(func, pop, N, B, a, dx):
+    evaluated_pop = np.ndarray(shape=(len(pop),), dtype="float")
+    for i in range(len(pop)):
+        arr = decode_individual(pop[i], N, B, a, dx)
+    return evaluated_pop
+
 
