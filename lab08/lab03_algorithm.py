@@ -1,6 +1,7 @@
 import math
 import numpy as np
-
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 def nbits(a, b, dx):
     length = abs(b - a)/dx
@@ -92,7 +93,7 @@ def obj_func(x):
     return math.sin(math.pi * w1)**2 + sum + (w2 - 1)**2 * (1 + math.sin(2 * math.pi * w2)**2)
 
 
-def gen_alg_implementation(fun, pop_size, pk, pm, generations, dx, *args):
+def gen_alg_implementation(fun, pop_size, pk, pm, generations, dx):
     N = 2
     B, dx = nbits(-10, 10, dx)
     pop = gen_population(pop_size, B=B)
@@ -103,9 +104,8 @@ def gen_alg_implementation(fun, pop_size, pk, pm, generations, dx, *args):
     evaluated_pop = evaluate_population(fun, pop, dx, B=B)
     best_sol = get_best(pop, evaluated_pop)
 
-    if args[0] == 'plot':
-        first_pop_sol = np.apply_along_axis(decode_individual, 1, pop, dx, -10, N, B)
-        first_pop_eval = np.copy(evaluated_pop)
+    first_pop_sol = np.apply_along_axis(decode_individual, 1, pop, dx, -10, N, B)
+    first_pop_eval = np.copy(evaluated_pop)
 
     for i in range(2, generations + 1):
         pop = roulette(pop, evaluated_pop)
@@ -124,15 +124,14 @@ def gen_alg_implementation(fun, pop_size, pk, pm, generations, dx, *args):
 
         list_best.append(best_sol[1])
 
-        if i == generations // 2 and args[0] == 'plot':
+        if i == generations // 2:
             mid_pop_sol = np.apply_along_axis(decode_individual, 1, pop, dx, -10, N, B)
             mid_pop_eval = np.copy(evaluated_pop)
 
-        if i == generations and args[0] == 'plot':
+        if i == generations:
             last_pop_sol = np.apply_along_axis(decode_individual, 1, pop, dx, -10, N, B)
             last_pop_eval = np.copy(evaluated_pop)
 
-    if args[0] == 'plot':
         best_x, best_y = decode_individual(best_sol[0], dx, -10, N, B)
         best_z = best_sol[1]
 
