@@ -1,42 +1,41 @@
 import math
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+
 
 def nbits(a, b, dx):
-    length = abs(b - a)/dx
+    length = abs(b - a) / dx
     B = math.ceil(math.log(length, 2))
 
-    tmp = 2**B
-    dx_new = abs(b-a)/tmp
+    tmp = 2 ** B
+    dx_new = abs(b - a) / tmp
 
     return B, dx_new
 
 
 def gen_population(P, N, B):
-    population = np.ndarray(shape=(N, P * B), dtype="int")
+    population = np.ndarray(shape=(P, N * B), dtype="int")
     for i in range(P):
         for j in range(B * N):
             population[i][j] = np.random.randint(0, 2)
 
-
     return population
 
 
-def decode_individual(individual, N, B, a, dx):
-    decoded = np.ndarray(shape=(N,))
+def to_decimal(ind, B):
+    dec = sum([ind[-n - 1] * (2 ** n) for n in range(B)])
+    return dec
 
-    for i in range(N):
-        decimal = 0
-        for j in range(B):
-            decimal += individual[i * B + j] * 2**(B - j - 1)
-        decoded[i] = a + (decimal * dx)
-    return decoded
+
+def decode_individual(individual, N, B, a, dx):
+    decode_individual = np.array(
+        [(a + to_decimal(individual[n * B:n * B + B], B)) * dx for n in range(len(individual) // B)])
+    return decode_individual
 
 
 def evaluate_population(func, pop, N, B, a, dx):
     evaluated_pop = np.array([func(decode_individual(i, N, B, a, dx)) for i in pop])
     return evaluated_pop
+
 
 def get_best(pop, evaluated_pop):
     best_value = np.amax(evaluated_pop)
@@ -65,7 +64,7 @@ def cross(pop, pk):
     new_pop = np.ndarray(shape=(len(pop), len(pop[0])), dtype="int")
     for i in range(0, len(pop) - 1, 2):
         if np.random.random() < pk:
-            cross_p = len(pop[0]/2)
+            cross_p = len(pop[0] / 2)
             for j in range(cross_p):
                 new_pop[i][j] = pop[i][j]
                 new_pop[i + 1][j] = pop[i + 1][j]
@@ -84,27 +83,28 @@ def mutate(pop, pm):
     new_pop = np.array([[not (x) if np.random.random_sample() < pm else x for x in pop[i]] for i in range(len(pop))])
     return new_pop
 
+
 def obj_func(x):
-    w1 = 1 + (x[0]-1)/4
+    w1 = 1 + (x[0] - 1) / 4
     w2 = 1 + (x[1] - 1) / 4
 
-    sum = (w1 - 1)**2 * (1 + 10 * math.sin(math.pi * w1 + 1)**2)
+    sum = (w1 - 1) ** 2 * (1 + 10 * math.sin(math.pi * w1 + 1) ** 2)
 
-    return math.sin(math.pi * w1)**2 + sum + (w2 - 1)**2 * (1 + math.sin(2 * math.pi * w2)**2)
+    return math.sin(math.pi * w1) ** 2 + sum + (w2 - 1) ** 2 * (1 + math.sin(2 * math.pi * w2) ** 2)
 
 
-def gen_alg_implementation(fun, pop_size, pk, pm, generations, dx):
+def genetic_evolution(fun, pop_size, pk, pm, generations, dx):
     N = 2
     B, dx = nbits(-10, 10, dx)
-    pop = gen_population(pop_size, B=B)
+    pop = gen_population(pop_size, 2, B)
     best_generation = 1
     list_best = []
     list_best_generation = []
     list_mean = []
-    evaluated_pop = evaluate_population(fun, pop, dx, B=B)
+    evaluated_pop = evaluate_population(fun, pop, 2, B, -10, dx)
     best_sol = get_best(pop, evaluated_pop)
 
-    first_pop_sol = np.apply_along_axis(decode_individual, 1, pop, dx, -10, N, B)
+    first_pop_sol = np.apply_along_axis(decode_individual, 1, pop, N, B, -10, dx)
     first_pop_eval = np.copy(evaluated_pop)
 
     for i in range(2, generations + 1):
@@ -112,7 +112,7 @@ def gen_alg_implementation(fun, pop_size, pk, pm, generations, dx):
         pop = cross(pop, pk)
         pop = mutate(pop, pm)
 
-        evaluated_pop = evaluate_population(fun, pop, dx, B=B)
+        evaluated_pop = evaluate_population(fun, pop, 2, B, -10, dx)
         best_sol_temp = get_best(pop, evaluated_pop)
 
         list_best_generation.append(best_sol_temp[1])
@@ -125,57 +125,36 @@ def gen_alg_implementation(fun, pop_size, pk, pm, generations, dx):
         list_best.append(best_sol[1])
 
         if i == generations // 2:
-            mid_pop_sol = np.apply_along_axis(decode_individual, 1, pop, dx, -10, N, B)
+            mid_pop_sol = np.apply_along_axis(decode_individual, 1, pop, N, B, -10, dx)
             mid_pop_eval = np.copy(evaluated_pop)
 
         if i == generations:
-            last_pop_sol = np.apply_along_axis(decode_individual, 1, pop, dx, -10, N, B)
+            last_pop_sol = np.apply_along_axis(decode_individual, 1, pop, N, B, -10, dx)
             last_pop_eval = np.copy(evaluated_pop)
 
-        best_x, best_y = decode_individual(best_sol[0], dx, -10, N, B)
-        best_z = best_sol[1]
+    best_x, best_y = decode_individual(best_sol[0], 2, B, -10, dx)
+    best_z = best_sol[1]
 
-        fig = plt.figure()
-        plt.suptitle('Wykresy pierwszej, środkowej i ostatniej populacji. Najlepszy osobnik zaznaczony (*)')
-        a1 = fig.add_subplot(131, projection='3d')
-        x = first_pop_sol.T[0]
-        y = first_pop_sol.T[1]
-        z = first_pop_eval
-        a1.scatter(x, y, z, c=z, marker='o')
-        a1.scatter(best_x, best_y, best_z, c='r', s=30, marker='*')
-        plt.title('First population')
-        plt.axis([-10, 10, -10, 10])
-        a1.set_xlabel('x')
-        a1.set_ylabel('y')
-        a1.set_zlabel('z')
-        a1.view_init(10, 40)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
 
-        a2 = fig.add_subplot(132, projection='3d')
-        x = mid_pop_sol.T[0]
-        y = mid_pop_sol.T[1]
-        z = mid_pop_eval
-        a2.scatter(x, y, z, c=z, marker='o')
-        a2.scatter(best_x, best_y, best_z, c='r', s=30, marker='*')
-        plt.title('Middle population')
-        plt.axis([-10, 10, -10, 10])
-        a2.set_xlabel('x')
-        a2.set_ylabel('y')
-        a2.set_zlabel('z')
-        a2.view_init(10, 40)
+    x = np.arange(-10, 10, 0.25)
+    y = np.arange(-10, 10, 0.25)
+    x, y = np.meshgrid(x, y)
+    z = np.array([obj_func([x_z, y_z]) for x_z, y_z in zip(np.ravel(x), np.ravel(y))])
+    z = z.reshape(x.shape)
+    surf = ax.plot_surface(x, y, z, cmap='inferno', linewidth=0)
 
-        a3 = fig.add_subplot(133, projection='3d')
-        x = last_pop_sol.T[0]
-        y = last_pop_sol.T[1]
-        z = last_pop_eval
-        a3.scatter(x, y, z, c=z, marker='o')
-        a3.scatter(best_x, best_y, best_z, c='r', s=30, marker='*')
-        plt.title('Last population')
-        plt.axis([-10, 10, -10, 10])
-        a3.set_xlabel('x')
-        a3.set_ylabel('y')
-        a3.set_zlabel('z')
-        a3.view_init(10, 40)
+    ax.scatter(first_pop_sol.T[0], first_pop_sol.T[1], first_pop_eval, label='First Gen', c="b")
+    ax.scatter(mid_pop_sol.T[0], mid_pop_sol.T[1], mid_pop_eval, label='Mid Gen', c="g")
+    ax.scatter(last_pop_sol.T[0], last_pop_sol.T[1], last_pop_eval, label='Last Gen', c="r")
 
-        plt.show()
+    ax.set_xlabel('x1')
+    ax.set_ylabel('x2')
+    ax.set_zlabel('Levy function (x, y)')
+
+    fig.colorbar(surf, shrink=0.5, aspect=5)
+
+    plt.show()
 
     return best_sol, best_generation, list_best, list_best_generation, list_mean
