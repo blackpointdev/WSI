@@ -18,6 +18,7 @@ def gen_population(P, N, B):
         for j in range(B * N):
             population[i][j] = np.random.randint(0, 2)
 
+
     return population
 
 
@@ -33,9 +34,12 @@ def decode_individual(individual, N, B, a, dx):
 
 
 def evaluate_population(func, pop, N, B, a, dx):
-    evaluated_pop = np.ndarray(shape=(len(pop),), dtype="float")
-    for i in range(len(pop)):
-        arr = decode_individual(pop[i], N, B, a, dx)
+    evaluated_pop = np.array([func(decode_individual(i, N, B, a, dx)) for i in pop])
     return evaluated_pop
+
+def get_best(pop, evaluated_pop):
+    best_value = np.amax(evaluated_pop)
+    best_individual = np.array(pop[np.argmax(evaluated_pop)])
+    return best_individual, best_value
 
 
