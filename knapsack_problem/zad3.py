@@ -39,11 +39,22 @@ def nbits(a, b, dx):
     return B, dx_new
 
 
-def gen_population(P, N, B):
-    population = np.ndarray(shape=(P, N * B), dtype="int")
-    for i in range(P):
-        for j in range(B * N):
-            population[i][j] = np.random.randint(0, 2)
+def gen_population(w, v, W, pop_size, corr_method):
+    '''
+    Method for generating population.
+    Input:
+        w - list of weights of items in knapsack
+        v - list of values of items in knapsack
+        W - capacity of kanapsack
+        pop_size - size of generated population should be
+        corr_method - index of correction method (1 - standard method, 2 - improved)
+    '''
+    population = np.random.randint(0, 2, size=(pop_size, len(w)), dtype=bool)
+    for individual in population:
+        if corr_method == 1: # Basic, random method
+            individual = correct_solution(w, v, W, individual)
+        elif corr_method == 2: # Custom, improved method
+            individual = correct_solution2(w, v, W, individual)
 
     return population
 
@@ -59,8 +70,10 @@ def decode_individual(individual, N, B, a, dx):
     return decode_individual
 
 
-def evaluate_population(func, pop, N, B, a, dx):
-    evaluated_pop = np.array([func(decode_individual(i, N, B, a, dx)) for i in pop])
+def evaluate_population(population, v):
+    evaluated_pop = np.ndarray(shape = (1, len(population)))
+    for i in evaluated_pop:
+        i = np.sum(v[population[i]]) # Not sure if it works
     return evaluated_pop
 
 
@@ -109,16 +122,6 @@ def cross(pop, pk):
 def mutate(pop, pm):
     new_pop = np.array([[not (x) if np.random.random_sample() < pm else x for x in pop[i]] for i in range(len(pop))])
     return new_pop
-
-
-def obj_func(x):
-    w1 = 1 + (x[0] - 1) / 4
-    w2 = 1 + (x[1] - 1) / 4
-
-    sum = (w1 - 1) ** 2 * (1 + 10 * math.sin(math.pi * w1 + 1) ** 2)
-
-    return -(math.sin(math.pi * w1) ** 2 + sum + (w2 - 1) ** 2 * (1 + math.sin(2 * math.pi * w2) ** 2))
-
 
 def genetic_evolution(fun, pop_size, pk, pm, generations, dx, plot):
     N = 2
