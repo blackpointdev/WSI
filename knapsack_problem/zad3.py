@@ -29,23 +29,13 @@ def generate_problem(wmin, wmax, vmin, vmax, items_num):
     v = np.random.randint(vmin, vmax, size=items_num)  #values
     return w, v
 
-def nbits(a, b, dx):
-    length = abs(b - a) / dx
-    B = math.ceil(math.log(length, 2))
-
-    tmp = 2 ** B
-    dx_new = abs(b - a) / tmp
-
-    return B, dx_new
-
-
-def gen_population(w, v, W, pop_size, corr_method):
+def gen_population(w, v, W, pop_size, corr_method = 1):
     '''
     Method for generating population.
     Input:
         w - list of weights of items in knapsack
         v - list of values of items in knapsack
-        W - capacity of kanapsack
+        W - capacity of knapsack
         pop_size - size of generated population should be
         corr_method - index of correction method (1 - standard method, 2 - improved)
     '''
@@ -71,6 +61,11 @@ def decode_individual(individual, N, B, a, dx):
 
 
 def evaluate_population(population, v):
+    '''
+    Method for evaluating population.
+    :param population: population generated before
+    :param v: list of values of items in knapsack
+    '''
     evaluated_pop = np.ndarray(shape = (1, len(population)))
     for i in evaluated_pop:
         i = np.sum(v[population[i]]) # Not sure if it works
@@ -84,23 +79,34 @@ def get_best(pop, evaluated_pop):
 
 
 def roulette(pop, evaluated_pop):
-    if evaluated_pop.min() < 1:
-        evaluated_pop += math.fabs(evaluated_pop.min()) + 1
-
-    evaluated_pop = np.cumsum(evaluated_pop / evaluated_pop.sum())
-    new_pop = np.ndarray(shape=np.shape(pop), dtype=np.float64)
-
-    for i in range(len(pop)):
-        j = 0
-        r = np.random.random_sample()
-        while evaluated_pop[j] < r:
-            j += 1
-        new_pop[i] = pop[j]
-
+    '''
+    Method for selection from population
+    :param pop: Population
+    :param evaluated_pop:
+    :return:
+    '''
+    new_pop = np.copy(pop)
+    for i in range(len(evaluated_pop)):
+        rand = np.random.random()
+        for j in range(len(evaluated_pop)):
+            if evaluated_pop[j] > rand:
+                new_pop[i] = pop[j]
+                break
     return new_pop
 
 
-def cross(pop, pk):
+def cross(pop, pk, w, v, W):
+    '''
+    Method for crossing given population.
+    :param pop: Given population
+    :param pm: Probability of crossing
+    :param w: List of weights of items in knapsack
+    :param v: List of values of items in knapsack
+    :param W: Capacity of knapsack
+    :param corr_method: index of correction method (1 - standard method, 2 - improved)
+    :return: Crossed population.
+    '''
+    # TODO Not finished!!!
     new_pop = np.ndarray(shape=(len(pop), len(pop[0])), dtype="int")
     for i in range(0, len(pop) - 1, 2):
         if np.random.random() < pk:
@@ -119,14 +125,31 @@ def cross(pop, pk):
     return new_pop
 
 
-def mutate(pop, pm):
-    new_pop = np.array([[not (x) if np.random.random_sample() < pm else x for x in pop[i]] for i in range(len(pop))])
-    return new_pop
+def mutate(pop, pm, w, v, W, corr_method = 1):
+    '''
+    Method for mutating given population.
+    :param pop: Given population
+    :param pm: Probability of mutation
+    :param w: List of weights of items in knapsack
+    :param v: List of values of items in knapsack
+    :param W: Capacity of knapsack
+    :param corr_method: index of correction method (1 - standard method, 2 - improved)
+    :return: Mutated population
+    '''
+    for i in range(len(pop)):
+        for j in range(len(pop[i])):
+            if np.random.rand() <= pm:
+                pop[i][j] = not pop[i][j]
 
-def genetic_evolution(fun, pop_size, pk, pm, generations, dx, plot):
+        if corr_method == 1:
+            pop[i] = correct_solution(w, v, W, pop[i])
+        elif corr_method:
+            pop[i] = correct_solution2(w, v, W, pop[i])
+    return pop
+
+def genetic_evolution(w, v, W, pop_size, pk, pm, generations, plot):
     N = 2
-    B, dx = nbits(-10, 10, dx)
-    pop = gen_population(pop_size, 2, B)
+    pop = gen_population(w, v, W, pop_size)
     best_generation = 1
     list_best = []
     list_best_generation = []
